@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id
+  username        String
+  createdAt       DateTime         @default(now())
+  profileImg      String?          @default("https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc")
+  email           String           @unique
+  deletedMessages DeletedMessage[]
+  messages        Message[]
+  rooms           Room[]
+  memberships     RoomMembership[]
+}
+
+model Message {
+  id             String           @id @default(uuid())
+  roomId         String
+  senderId       String?
+  content        String
+  createdAt      DateTime         @default(now())
+  DeletedMessage DeletedMessage[]
+  room           Room             @relation(fields: [roomId], references: [id])
+  sender         User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
+}
+
+model Room {
+  id          String           @id @default(uuid())
+  name        String
+  createdById String
+  createdAt   DateTime         @default(now())
+  messages    Message[]
+  createdBy   User             @relation(fields: [createdById], references: [id])
+  memberships RoomMembership[]
+}
+
+model RoomMembership {
+  id         Int       @id @default(autoincrement())
+  userId     String
+  roomId     String
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
+  room       Room      @relation(fields: [roomId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model DeletedMessage {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  messageId String
+  deletedAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
