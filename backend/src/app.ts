@@ -1,9 +1,10 @@
 import express from "express";
 import cors, { CorsOptions } from "cors";
+import errorMiddleware from "./middlewares/errorMiddleware";
 
 // Importing routes
-import authRoutes from "./routes/auth"; // change the whole auth thing, make signup/signin controllers
-import errorMiddleware from "./middlewares/errorMiddleware";
+import authRoutes from "./routes/auth";
+import userRoutes from "./routes/user";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use(express.json());
 
 // Registering routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/user", userRoutes);
 
 app.use(errorMiddleware);
 
