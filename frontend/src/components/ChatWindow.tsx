@@ -64,7 +64,7 @@ const chatMessages = [
     },
 ]
 
-function ChatWindow() {
+function ChatWindow({roomId} : {roomId : string}) {
     const currentUser = "Akash";
     return (
         <div className="flex my-2 flex-1 md:w-3/4 rounded-md mx-auto bg-transparent">
