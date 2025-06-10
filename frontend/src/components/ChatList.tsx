@@ -1,4 +1,7 @@
 import { Link, useParams } from "react-router-dom";
+import { IoMdPersonAdd } from "react-icons/io";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 interface ChatItem {
     roomId: string;
@@ -9,41 +12,102 @@ interface ChatItem {
     unreadCount : number;
 }
 
-const chatList: ChatItem[] = [
-    {
-        roomId: "abc123",
-        roomName: "Study Group",
-        profileImg: "https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc",
-        lastMessage: "Kal Exam hai!!!",
-        lastMessageTime: "10:30 PM",
-        unreadCount: 2,
-    },
-    {
-        roomId: "def123",
-        roomName: "Devs Group",
-        profileImg: "https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc",
-        lastMessage: "Let's build something :), like a chat application for the users",
-        lastMessageTime: "10:30 PM",
-        unreadCount: 4,
-    },
-    {
-        roomId: "ghi123",
-        roomName: "Ashu",
-        profileImg: "https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc",
-        lastMessage: "",
-        lastMessageTime: "10:30 PM",
-        unreadCount: 0,
-    },
-]
+// const chatList: ChatItem[] = [
+//     {
+//         roomId: "abc123",
+//         roomName: "Study Group",
+//         profileImg: "https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc",
+//         lastMessage: "Kal Exam hai!!!",
+//         lastMessageTime: "10:30 PM",
+//         unreadCount: 2,
+//     },
+//     {
+//         roomId: "def123",
+//         roomName: "Devs Group",
+//         profileImg: "https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc",
+//         lastMessage: "Let's build something :), like a chat application for the users",
+//         lastMessageTime: "10:30 PM",
+//         unreadCount: 4,
+//     },
+//     {
+//         roomId: "ghi123",
+//         roomName: "Ashu",
+//         profileImg: "https://imgs.search.brave.com/olU1frCI_rKOD3-NBWDPcqTpdn8YDMNYb2wVQ2TmqlM/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzAzLzQ2LzgzLzk2/LzM2MF9GXzM0Njgz/OTY4M182bkFQemJo/cFNrSXBiOHBtQXd1/ZmtDN2M1ZUQ3d1l3/cy5qcGc",
+//         lastMessage: "",
+//         lastMessageTime: "10:30 PM",
+//         unreadCount: 0,
+//     },
+// ]
+
+// When you add a user by email, send a create-room message via WebSocket to your backend.
+// Backend creates the room and adds both users.
+// Backend should send a room-created event back to the client.
+// On receiving room-created, update your chat list and optionally auto-select/join the new room.
 
 function ChatList() {
+    const [searchInput, setSearchInput] = useState<string>("");
+    const [userEmail, setUserEmail] = useState<string>("");
+    const [showAddUserDialog, setShowAddUserDialog] = useState<boolean>(false);
+    const [chatList, setChatList] = useState<ChatItem[]>([]);
 
     const {roomId} = useParams();
 
+    // useEffect(() => {
+    //     const fetchChatList = async () => {
+    //         const res = axios.get(`${import.meta.env.VITE_SERVER_URL}/api/v1/`);
+    //     }
+    // }, [])
+
+    // Filter chatlist
+    const filterChatList = chatList.filter((chat) => chat.roomName.toLowerCase().includes(searchInput.toLowerCase()))
+
+    // Add user
+    const handleAddUser = (() => {
+
+    })
+
     return (
         <div className="w-full bg-white dark:bg-slate-900 sm:w-full md:w-[30%] lg:w-80 h-full">
+            <div className="flex items-end my-2">
+                <input 
+                    type="text" 
+                    className="px-4 py-2 flex-1 focus:border-b border-b-gray-500 dark:border-b-gray-300 dark:text-white/80 text-black/80 outline-none"
+                    placeholder="Search username"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                />
+                <button className="px-3 py-1 text-gray-300 cursor-pointer hover:text-gray-100" onClick={() => setShowAddUserDialog(prev => !prev)}>
+                    <IoMdPersonAdd size={20} />
+                </button>
+                {showAddUserDialog &&
+                    <>
+                        <div className="fixed inset-0 z-40 dark:bg-black/30 bg-white/30 backdrop-blur-sm" onClick={() => setShowAddUserDialog(false)} />
+                         <form
+                        className="fixed z-50 top-1/3 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 p-4 rounded shadow flex flex-col gap-2"
+                        onSubmit={handleAddUser}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Add user by email</label>
+                        <input
+                            type="email"
+                            placeholder="Enter email of user"
+                            value={userEmail}
+                            onChange={(e) => setUserEmail(e.target.value)}
+                            className="border px-2 py-1 rounded"
+                            required
+                        />
+                        <button
+                            type="submit"
+                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                        >
+                            Add
+                        </button>
+                    </form>
+                    </>
+                }
+            </div>
             <div className="flex flex-col w-full">
-                {chatList.map((chat) => (
+                {filterChatList.map((chat) => (
                     <Link 
                         to={`/${chat.roomId}`} 
                         key={chat.roomId}
