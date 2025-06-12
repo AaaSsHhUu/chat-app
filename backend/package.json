@@ -6,6 +6,9 @@
     "start": "tsc -b && node ./dist/index.js",
     "dev": "prisma generate && ts-node-dev --respawn --transpile-only src/index.ts"
   },
+  "prisma" : {
+    "seed" : "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts "
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
