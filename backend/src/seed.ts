@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { prisma } from "../src/utils/prisma";
-import { sendSocketError } from "../src/websocket/utils";
+import { prisma } from "./utils/prisma";
+import { sendSocketError } from "./websocket/utils";
 
 async function main(){
     // Create users
