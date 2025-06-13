@@ -15,9 +15,19 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import PageNotFound from "./pages/PageNotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 
+import { Provider } from "react-redux";
+import { store } from "./app/store.ts";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase.ts";
+import { setUser } from "./features/auth/authSlice.ts";
+
+onAuthStateChanged(auth, (user) => {
+    store.dispatch(setUser(user));
+})
+
 createRoot(document.getElementById("root")!).render(
-    <ThemeProvider>
-        <AuthProvider>
+    <Provider store={store}>
+        <ThemeProvider>
             <BrowserRouter>
                 <Toaster
                     position="top-right"
@@ -42,6 +52,6 @@ createRoot(document.getElementById("root")!).render(
                     <Route path="*" element={<PageNotFound />} />
                 </Routes>
             </BrowserRouter>
-        </AuthProvider>
-    </ThemeProvider>
+        </ThemeProvider>
+    </Provider>
 );
