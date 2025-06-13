@@ -61,7 +61,7 @@ export const createOneToOneChatRoom = asyncHandler(async (req : Request, res : R
     // If no room is found then create a new one
     const newRoom = await prisma.room.create({
         data : {
-            name : "",
+            name : `${creatorEmail} + ${userEmail}`,
             createdById : creator.id,
         }
     })
@@ -86,4 +86,65 @@ export const createOneToOneChatRoom = asyncHandler(async (req : Request, res : R
         success : true,
         roomId : newRoom.id
     })
+})
+
+export const createOneToManyChatRoom = asyncHandler(async(req : Request, res : Response) => {
+    const {groupName, creatorEmail, userEmails} = req.body;
+
+    if(!groupName){
+        throw new ErrorHandler("Groupname not provided", 400);
+    }
+
+    if(!creatorEmail || !Array.isArray(userEmails) ||  userEmails.length === 0){
+        throw new ErrorHandler("Required emails not provided", 400);
+    }
+
+    const creator = await prisma.user.findUnique({
+        where : {
+            email : creatorEmail
+        }
+    })
+
+    if(!creator){
+        throw new ErrorHandler("Invalid creator email", 400);
+    }
+
+    const users = await Promise.all(userEmails.map(
+        (email : string) => prisma.user.findUnique({
+            where : {email}
+        })
+    ))
+
+    // Filter out any not found users
+    const validUsers = users.filter(Boolean);
+
+    if(validUsers.length !== userEmails.length){
+        throw new ErrorHandler("One or more user emails are invalid", 400);
+    }
+
+    // creating new room
+    const room = await prisma.room.create({
+        data : {
+            name : groupName,
+            createdById : creator.id
+        }
+    })
+
+    // Adding every user and creator in the room
+    const membershipData = [
+        {userId : creator.id, roomId : room.id},
+        ...validUsers.map((user : any) => ({
+            userId : user.id,
+            roomId : room.id
+        }))
+    ]
+    await prisma.roomMembership.createMany({
+        data : membershipData
+    })
+
+    return res.status(201).json({
+        success : true,
+        roomId : room.id
+    })
+
 })
