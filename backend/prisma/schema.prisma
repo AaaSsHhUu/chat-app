@@ -27,7 +27,7 @@ model Message {
   createdAt      DateTime         @default(now())
   DeletedMessage DeletedMessage[]
   room           Room             @relation(fields: [roomId], references: [id])
-  sender         User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  sender         User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
 }
 
 model Room {
@@ -41,13 +41,14 @@ model Room {
 }
 
 model RoomMembership {
-  id         Int       @id @default(autoincrement())
-  userId     String
-  roomId     String
-  joinedAt   DateTime  @default(now())
-  lastReadAt DateTime?
-  room       Room      @relation(fields: [roomId], references: [id])
-  user       User      @relation(fields: [userId], references: [id])
+  id          Int       @id @default(autoincrement())
+  userId      String
+  roomId      String
+  joinedAt    DateTime  @default(now())
+  lastReadAt  DateTime?
+  displayName String?
+  room        Room      @relation(fields: [roomId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
 }
 
 model DeletedMessage {
