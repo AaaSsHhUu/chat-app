@@ -5,7 +5,7 @@ const WebSocketContext = createContext<WebSocket | null>(null);
 
 export const WebSocketProvider = ({children} : {children : React.ReactNode}) => {
     const socketRef = useRef<WebSocket | null>(null);
-
+    // You don’t want React to re-render the component whenever the socket changes (which useState would do).
     useEffect(() => {
         socketRef.current = new WebSocket("ws://localhost:8080");
 
