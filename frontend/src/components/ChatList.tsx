@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { IoMdPersonAdd } from "react-icons/io";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import CreateRoom from "./CreateRoom";
 
 interface ChatItem {
     roomId: string;
@@ -9,7 +10,7 @@ interface ChatItem {
     profileImg: string;
     lastMessage: string;
     lastMessageTime: string | Date;
-    unreadCount : number;
+    unreadCount: number;
 }
 
 // const chatList: ChatItem[] = [
@@ -50,7 +51,7 @@ function ChatList() {
     const [showAddUserDialog, setShowAddUserDialog] = useState<boolean>(false);
     const [chatList, setChatList] = useState<ChatItem[]>([]);
 
-    const {roomId} = useParams();
+    const { roomId } = useParams();
 
     // useEffect(() => {
     //     const fetchChatList = async () => {
@@ -63,14 +64,16 @@ function ChatList() {
 
     // Add user
     const handleAddUser = (() => {
-
+        // post req to add user
+        // res -> 
+        // a room with a name
     })
 
     return (
         <div className="w-full bg-white dark:bg-slate-900 sm:w-full md:w-[30%] lg:w-80 h-full">
             <div className="flex items-end my-2">
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     className="px-4 py-2 flex-1 focus:border-b border-b-gray-500 dark:border-b-gray-300 dark:text-white/80 text-black/80 outline-none"
                     placeholder="Search username"
                     value={searchInput}
@@ -80,36 +83,16 @@ function ChatList() {
                     <IoMdPersonAdd size={20} />
                 </button>
                 {showAddUserDialog &&
-                    <>
-                        <div className="fixed inset-0 z-40 dark:bg-black/30 bg-white/30 backdrop-blur-sm" onClick={() => setShowAddUserDialog(false)} />
-                         <form
-                        className="fixed z-50 top-1/3 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 p-4 rounded shadow flex flex-col gap-2"
-                        onSubmit={handleAddUser}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Add user by email</label>
-                        <input
-                            type="email"
-                            placeholder="Enter email of user"
-                            value={userEmail}
-                            onChange={(e) => setUserEmail(e.target.value)}
-                            className="border px-2 py-1 rounded"
-                            required
-                        />
-                        <button
-                            type="submit"
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                        >
-                            Add
-                        </button>
-                    </form>
-                    </>
+                    <div>
+                        <div className="fixed inset-0 bg-white/30 dark:bg-black/30 backdrop-blur-sm z-50" onClick={() => setShowAddUserDialog(false)} />
+                        <CreateRoom setShowAddUserDialog={setShowAddUserDialog} />
+                    </div>
                 }
             </div>
             <div className="flex flex-col w-full">
                 {filterChatList.map((chat) => (
-                    <Link 
-                        to={`/${chat.roomId}`} 
+                    <Link
+                        to={`/${chat.roomId}`}
                         key={chat.roomId}
                         className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition ${roomId === chat.roomId ? "bg-gray-300" : "hover:bg-gray-200 dark:hover:bg-slate-800"}`}
                     >
@@ -119,7 +102,7 @@ function ChatList() {
                                 {chat.roomName}
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-300 truncate">
-                                {chat.lastMessage.length > 25 ? chat.lastMessage.slice(0,20) + " ..." : chat.lastMessage}
+                                {chat.lastMessage.length > 25 ? chat.lastMessage.slice(0, 20) + " ..." : chat.lastMessage}
                             </div>
                         </div>
                         <div className="flex flex-col items-end">
