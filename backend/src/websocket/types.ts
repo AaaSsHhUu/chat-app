@@ -8,7 +8,8 @@ export type ConnectedUser = {
 };
 
 export type WSMessage =
-  | { type: "create-room"; payload: { roomName: string; userId: string } }
+  | { type: "create-one-to-one-room"; payload: { userEmail: string ; creatorEmail: string } }
+  | { type: "create-one-to-many-room"; payload: { groupName : string; userEmails: string[] ; creatorEmail: string } }
   | { type: "join"; payload: { userId: string; roomId: string } }
   | { type: "leave"; payload: {roomId : string, userId : string} }
   | { type: "chat"; payload: { message: string, userId : string, roomId :string } }

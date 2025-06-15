@@ -20,10 +20,13 @@ export async function handleMessage(
 		case "auth":
 			await handleAuth(socket, data.payload);
 			break;
-		case "create-room":
-			await handleCreateRoom(socket, data.payload);
+		case "create-one-to-one-room":
+			await createOneToOneChatRoom(socket, data.payload);
 			break;
 
+		case "create-one-to-many-room":
+			await createOneToManyChatRoom(socket, data.payload);
+			break;
 		case "chat":
 			await handleSendMessage(socket, data.payload);
 			break;
@@ -72,35 +75,195 @@ export async function handleAuth(
 	}
 }
 
-export async function handleCreateRoom(
+export async function createOneToOneChatRoom(
 	socket: AuthenticatedSocket,
-	data: { roomName: string }
+	data: { creatorEmail: string; userEmail: string }
 ) {
-	try {
-		if (!socket.userId) {
-			sendSocketError(socket, "Unauthorized");
-			return;
-		}
+	const { creatorEmail, userEmail } = data;
 
-		const room = await prisma.room.create({
-			data: {
-				name: data.roomName,
-				createdById: socket.userId,
-			},
-		});
-
-		// Add creator to the room
-		if(!roomMembers[room.id]){
-			roomMembers[room.id] = new Map();
-		}
-		roomMembers[room.id].set(socket.userId, socket);
-
+	if (!creatorEmail || !userEmail) {
 		socket.send(
-			JSON.stringify({ type: "room-created", payload: { room } })
+			JSON.stringify({
+				type: "error",
+				message: "Emails not provided",
+			})
 		);
-	} catch (error) {
-		sendSocketError(socket, "Failed to create a room");
 	}
+
+	const [creator, user] = await Promise.all([
+		prisma.user.findUnique({ where: { email: creatorEmail } }),
+		prisma.user.findUnique({ where: { email: userEmail } }),
+	]);
+
+	if (!creator) {
+		return socket.send(
+			JSON.stringify({ type: "error", message: "Invalid creator email" })
+		);
+	}
+	if (!user) {
+		return socket.send(
+			JSON.stringify({ type: "error", message: "Invalid user email" })
+		);
+	}
+
+	// Check if room already exists
+	const existingRooms = await prisma.room.findMany({
+		where: {
+			memberships: {
+				some: {
+					userId: { in: [user.id, creator.id] },
+				},
+			},
+		},
+		include: {
+			memberships: true,
+		},
+	});
+
+	// Check whether the founded rooms have exactly two members
+	const exactExistingRoom = existingRooms.find((room) => {
+		const memberIds = room.memberships.map((member) => member.userId);
+		return (
+			memberIds.length === 2 &&
+			memberIds.includes(user.id) &&
+			memberIds.includes(creator.id)
+		);
+	});
+
+	if (exactExistingRoom) {
+		return socket.send(
+			JSON.stringify({
+				type: "error",
+				message: "Room already exist",
+			})
+		);
+	}
+
+	// If no existing room then create a new one
+	const newRoom = await prisma.room.create({
+		data: {
+			name: "",
+			createdById: creator.id,
+		},
+	});
+
+	// Add both the user and the creator in the created room
+	await prisma.roomMembership.createMany({
+		data: [
+			{
+				userId: creator.id,
+				roomId: newRoom.id,
+				displayName: user.username,
+			},
+			{
+				userId: user.id,
+				roomId: newRoom.id,
+				displayName: creator.username,
+			},
+		],
+	});
+
+	socket.send(
+		JSON.stringify({
+			type: "room-created",
+			payload: { roomId: newRoom.id },
+		})
+	);
+}
+
+export async function createOneToManyChatRoom(
+	socket: WebSocket,
+	data: { groupName: string; userEmails: string[]; creatorEmail: string }
+) {
+	const { groupName, userEmails, creatorEmail } = data;
+
+	if (
+		!groupName ||
+		!Array.isArray(userEmails) ||
+		userEmails.length === 0 ||
+		!creatorEmail
+	) {
+		return socket.send(
+			JSON.stringify({
+				type: "error",
+				message: "Invalid inputs provided",
+			})
+		);
+	}
+
+	const creator = await prisma.user.findUnique({
+		where: { email: creatorEmail },
+	});
+	const users = await Promise.all(
+		userEmails.map((email) => prisma.user.findUnique({ where: { email } }))
+	);
+
+	if (!creator) {
+		return socket.send(
+			JSON.stringify({
+				type: "error",
+				message: "Invalid creator email",
+			})
+		);
+	}
+
+	const validUsers = users.filter(
+		(user): user is NonNullable<typeof user> => !!user
+	); // Same a Boolean(user) but with type safety
+
+	if (validUsers.length !== userEmails.length) {
+		return socket.send(
+			JSON.stringify({
+				type: "error",
+				message: "One or more user emails are invalid",
+			})
+		);
+	}
+
+	// Prevent duplicate group name by creator
+	const existingGroupName = await prisma.room.findFirst({
+		where: {
+			createdById: creator?.id,
+			name: groupName,
+		},
+	});
+
+	if (existingGroupName) {
+		return socket.send(
+			JSON.stringify({
+				type: "error",
+				message: "You already have group with this name",
+			})
+		);
+	}
+
+	// Create new room for the group
+	const newRoom = await prisma.room.create({
+		data: {
+			createdById: creator.id,
+			name: groupName,
+		},
+	});
+
+	// Add the creator and all the users in the new room
+	const membershipData = [
+		{ userId: creator.id, roomId: newRoom.id },
+		...validUsers.map((user) => ({
+			userId: user.id,
+			roomId: newRoom.id,
+		})),
+	];
+
+	await prisma.roomMembership.createMany({
+		data: membershipData,
+	});
+
+	socket.send(
+		JSON.stringify({
+			type: "room-created",
+			payload: { roomId: newRoom.id },
+		})
+	);
 }
 
 export async function handleSendMessage(
@@ -113,21 +276,21 @@ export async function handleSendMessage(
 			return;
 		}
 
-		if(data.message.length > 1000 || data.message.length <= 0){
+		if (data.message.length > 1000 || data.message.length <= 0) {
 			sendSocketError(socket, "Invalid message length");
-			return ;
+			return;
 		}
 
 		// Check whether the roomId is valid of not
 		const roomExist = await prisma.room.findUnique({
-			where : {
-				id : data.roomId
-			}
-		})
+			where: {
+				id: data.roomId,
+			},
+		});
 
-		if(!roomExist){
+		if (!roomExist) {
 			sendSocketError(socket, "Invalid room ID");
-			return ;
+			return;
 		}
 
 		// Save message in DB
@@ -138,7 +301,7 @@ export async function handleSendMessage(
 				content: data.message,
 			},
 		});
-	
+
 		// Broadcast the msg to all the room members
 		const members = roomMembers[data.roomId];
 		members?.forEach((memberSocket) => {
@@ -150,7 +313,7 @@ export async function handleSendMessage(
 			);
 		});
 	} catch (error) {
-		sendSocketError(socket, "Failed to send message")
+		sendSocketError(socket, "Failed to send message");
 	}
 }
 
@@ -163,13 +326,13 @@ export async function handleJoinRoom(
 			sendSocketError(socket, "Unauthorized");
 			return;
 		}
-	
+
 		// Add user to room in memory
 		if (!roomMembers[data.roomId]) {
 			roomMembers[data.roomId] = new Map();
 		}
 		roomMembers[data.roomId].set(socket.userId, socket);
-	
+
 		// Fetch last N messages
 		const messages = await prisma.message.findMany({
 			where: {
@@ -179,14 +342,14 @@ export async function handleJoinRoom(
 				createdAt: "asc",
 			},
 			take: 50,
-			select : {
-				id : true,
-				content : true,
-				createdAt : true,
-				senderId : true
-			}
+			select: {
+				id: true,
+				content: true,
+				createdAt: true,
+				senderId: true,
+			},
 		});
-	
+
 		socket.send(
 			JSON.stringify({
 				type: "joined",
@@ -210,7 +373,7 @@ export async function handleLeaveRoom(
 			sendSocketError(socket, "Unauthorized");
 			return;
 		}
-	
+
 		const members = roomMembers[data.roomId];
 		if (members) {
 			members.delete(socket.userId);
@@ -219,7 +382,7 @@ export async function handleLeaveRoom(
 				delete roomMembers[data.roomId];
 			}
 		}
-	
+
 		socket.send(
 			JSON.stringify({
 				type: "left",
@@ -234,25 +397,27 @@ export async function handleLeaveRoom(
 }
 
 export async function handleShowTyping(
-	socket : AuthenticatedSocket,
-	data : {userId : string; roomId : string, typing : boolean}
-){
+	socket: AuthenticatedSocket,
+	data: { userId: string; roomId: string; typing: boolean }
+) {
 	try {
 		const members = roomMembers[data.roomId];
-		if(!members) return ;
+		if (!members) return;
 
 		members.forEach((memberSocket, memberId) => {
-			if(memberId !== socket.userId){
-				memberSocket.send(JSON.stringify({
-					type : "typing",
-					payload : {
-						typing : true,
-						userId : data.userId,
-						roomId : data.roomId
-					}
-				}))
+			if (memberId !== socket.userId) {
+				memberSocket.send(
+					JSON.stringify({
+						type: "typing",
+						payload: {
+							typing: true,
+							userId: data.userId,
+							roomId: data.roomId,
+						},
+					})
+				);
 			}
-		})
+		});
 	} catch (error) {
 		sendSocketError(socket, "Show typing err - Something went wrong");
 	}
