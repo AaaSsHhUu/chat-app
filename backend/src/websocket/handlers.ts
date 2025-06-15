@@ -8,7 +8,7 @@ import { sendSocketError } from "./utils";
 
 export type AuthenticatedSocket = WebSocket & { userId?: string };
 
-export const authenticatedUsers = new Map<string, WebSocket>(); // userId -> socket
+export const authenticatedUsers = new Map<string, AuthenticatedSocket>(); // userId -> socket
 
 export const roomMembers: Record<string, Map<string, WebSocket>> = {}; // {roomId : {userId, socket}}
 
@@ -27,15 +27,15 @@ export async function handleMessage(
 		case "create-one-to-many-room":
 			await createOneToManyChatRoom(socket, data.payload);
 			break;
-		case "chat":
+		case "send-message":
 			await handleSendMessage(socket, data.payload);
 			break;
 
-		case "join":
+		case "join-room":
 			await handleJoinRoom(socket, data.payload);
 			break;
 
-		case "leave":
+		case "leave-room":
 			await handleLeaveRoom(socket, data.payload);
 			break;
 		case "typing":

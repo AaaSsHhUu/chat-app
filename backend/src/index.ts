@@ -16,9 +16,10 @@ wss.on("connection", (socket : WebSocket) => {
     socket.on("message", async (data) => {
         try {
             const msg = JSON.parse(data.toString());
+
             if(!isAuthenticated){
                 if(msg.type === "auth"){
-                    await handleMessage(socket, msg);
+                    await handleMessage(socket, msg); // this calls handleAuth
                     if(authSocket.userId) isAuthenticated = true;
                 }
                 else{
@@ -30,6 +31,7 @@ wss.on("connection", (socket : WebSocket) => {
                 }
                 return ;
             }
+            // After authentication
             await handleMessage(authSocket, msg);
         } catch (error) {
             socket.send(JSON.stringify({type : "error", message : "Invalid message format"}))
