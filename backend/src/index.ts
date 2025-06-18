@@ -3,6 +3,7 @@ import http from "http";
 import { WebSocket, WebSocketServer } from "ws";
 import app from "./app";
 import {AuthenticatedSocket, authenticatedUsers, handleMessage, roomMembers} from "./websocket/handlers";
+import { connectionManager } from "./websocket/connectionManager";
 
 const server = http.createServer(app);
 
@@ -41,14 +42,7 @@ wss.on("connection", (socket : WebSocket) => {
     // Cleanup function
     socket.on("close", () => {
         // Remove user from roomMembers (in memory) when disconnects
-        for(const [roomId, members] of Object.entries(roomMembers)){
-            members.delete(authSocket.userId!);
-            if(members.size === 0){
-                delete roomMembers[roomId];
-            }
-        }
-        // Remove user from authenticatedUsers (in memory) when disconnects
-        authenticatedUsers.delete(authSocket.userId!);
+        connectionManager.removeSocketCompletely(socket)
     })
 })
 

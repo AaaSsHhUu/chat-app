@@ -61,9 +61,7 @@ export const connectionManager = {
             const sockets = userSockets.get(userId);
 
             sockets?.forEach(socket => {
-                socket.send(JSON.stringify({
-                    message
-                }))
+                socket.send(JSON.stringify(message))
             })
         })
     },
@@ -73,9 +71,26 @@ export const connectionManager = {
         if(!sockets) return;
 
         sockets.forEach(socket => {
-            socket.send(JSON.stringify({
-                message
-            }))
+            socket.send(JSON.stringify(message))
         })
+    },
+
+    removeSocketCompletely(socket : WebSocket){
+        for(let [userId, sockets] of userSockets.entries()){
+            if(sockets.has(socket)){
+                sockets.delete(socket);
+                if(sockets.size === 0){
+                    userSockets.delete(userId);
+                    // For cleaning up room membership too
+                    for(const [roomId, members] of roomMembers.entries()){
+                        members.delete(roomId);
+                        if(members.size === 0){
+                            roomMembers.delete(roomId);
+                        }
+                    }
+                }
+                break;
+            }
+        }
     }
 }
