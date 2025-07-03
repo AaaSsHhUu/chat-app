@@ -19,41 +19,41 @@ import { store } from "./app/store.ts";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.ts";
 import { setUser } from "./features/auth/authSlice.ts";
-import { WebSocketProvider } from "./context/WebSocketContext.tsx";
 
 onAuthStateChanged(auth, (user) => {
-    store.dispatch(setUser(user));
+    console.log("user - ", user)
+    store.dispatch(setUser(user ?? null));
 })
 
 createRoot(document.getElementById("root")!).render(
     <Provider store={store}>
-        <WebSocketProvider>
-            <ThemeProvider>
-                <BrowserRouter>
-                    <Toaster
-                        position="top-right"
-                        richColors={true}
-                    />
-                    <Routes>
-                        {/* Protected Routes */}
-                        <Route element={<ProtectedRoute />}>
-                            <Route path="/" element={<App />}>
-                                <Route index element={<Chats />} /> {/* index makes a route the default child for its parent route. */}
-                                <Route path="settings" element={<Settings />}>
-                                    <Route path="profile" element={<ProfileSetting />} />
-                                    <Route path="account" element={<AccountSetting />} />
-                                </Route>
+        <ThemeProvider>
+            <BrowserRouter>
+                <Toaster
+                    position="top-right"
+                    richColors={true}
+                />
+                <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                        <Route element={<App />}> {/* App contains Header + <Outlet /> */}
+                            <Route path="/chats/:roomId?" element={<Chats />} />
+                            <Route path="/settings" element={<Settings />}>
+                                <Route path="profile" element={<ProfileSetting />} />
+                                <Route path="account" element={<AccountSetting />} />
                             </Route>
                         </Route>
+                    </Route>
 
-                        {/* Public Routes */}
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/signup" element={<Signup />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="*" element={<PageNotFound />} />
-                    </Routes>
-                </BrowserRouter>
-            </ThemeProvider>
-        </WebSocketProvider>
+                    {/* Catch-All */}
+                    <Route path="*" element={<PageNotFound />} />
+                </Routes>
+            </BrowserRouter>
+        </ThemeProvider>
     </Provider>
 );

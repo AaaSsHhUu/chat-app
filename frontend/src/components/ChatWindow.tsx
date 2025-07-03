@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { ChatBackground } from "./Chat-background";
 import ChatInput from "./ChatInput";
+import { useParams } from "react-router-dom";
 
 const chatMessages = [
     {
@@ -20,7 +22,7 @@ const chatMessages = [
     {
         content: "I am good",
         sender: "Prannit",
-        time: "22:2"
+        time: "22:02"
     },
     {
         content: "Hi",
@@ -40,7 +42,7 @@ const chatMessages = [
     {
         content: "I am good",
         sender: "Prannit",
-        time: "22:2"
+        time: "22:20"
     },
     {
         content: "Hi",
@@ -60,12 +62,25 @@ const chatMessages = [
     {
         content: "I am good",
         sender: "Prannit",
-        time: "22:2"
+        time: "22:20"
     },
 ]
 
-function ChatWindow({roomId} : {roomId : string}) {
+function ChatWindow() {
     const currentUser = "Akash";
+    const {roomId} = useParams();
+
+    if(!roomId){
+        return <div className="w-full flex justify-center items-center bg-transparent">
+            <ChatBackground />
+            <h1 className="text-3xl font-bold text-gray-500 dark:text-gray-200">Select Any Chat</h1>
+        </div>
+    }
+
+    useEffect(() => {
+
+    },[roomId])
+
     return (
         <div className="flex my-2 flex-1 md:w-3/4 rounded-md mx-auto bg-transparent">
             <ChatBackground className="w-full" />
@@ -78,14 +93,22 @@ function ChatWindow({roomId} : {roomId : string}) {
                                 className={`flex my-2 align-top ${chat.sender === currentUser ? "justify-end" : "justify-start"}`}
                             >
                                 <div
-                                    className={`max-w-xs px-4 py-2 rounded-lg shadow
+                                    className={`px-4 py-2 rounded-lg shadow 
                                     ${chat.sender === currentUser
-                                            ? "bg-blue-500 text-white rounded-br-none"
+                                            ? "bg-blue-400 text-white rounded-br-none"
                                             : "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none"
                                         }`}
                                 >
-                                    <div className="text-sm">{chat.content}</div>
-                                    <div className="text-xs text-right text-gray-700/80 dark:text-gray-200/80 mt-1">{chat.time}</div>
+                                        {
+                                        chat.sender === currentUser ?
+                                        <p className={`text-xs font-bold text-right`}>{chat.sender}</p>
+                                        :
+                                        <p className={`text-xs font-bol text-left`}>{chat.sender}</p>
+                                    }
+                                    <div className={`flex ${chat.sender === currentUser ? "flex-row-reverse" : "flex-row"} align-middle gap-3`}>
+                                        <div className="text-sm">{chat.content}</div>
+                                        <div className="text-xs text-right text-black/70 dark:text-gray-200/80 mt-1">{chat.time}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

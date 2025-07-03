@@ -12,7 +12,7 @@ export const getAllRooms = asyncHandler(async (req : Request, res : Response) =>
 
     const allRooms = await prisma.roomMembership.findMany({
         where : {
-            userId : user.id
+            userId : user.id,
         },
         select : {
             room : {
@@ -38,6 +38,9 @@ export const getAllRooms = asyncHandler(async (req : Request, res : Response) =>
                     }
                 }
             },
+            id : true,
+            displayName : true,
+            profileImg : true,
             lastReadAt : true
         },
     })
@@ -58,16 +61,20 @@ export const getAllRooms = asyncHandler(async (req : Request, res : Response) =>
 
         return {
             ...rm.room,
+            roomId : rm.id,
+            roomName : rm.displayName,
             lastMessage : rm.room.messages[0] || null,
-            unreadCount
+            unreadCount,
+            profileImg : rm.profileImg
         }
     }))
 
-    console.log("all rooms : ", allRooms);
+    // Filter out rooms where roomName is your own name
+    const filteredRooms = rooms.filter(room => room.roomName !== user.name);
 
     return res.status(200).json({
         success : true,
-        rooms
+        rooms : filteredRooms
     })
 
 })
