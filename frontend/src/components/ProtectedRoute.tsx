@@ -1,16 +1,22 @@
 import { WebSocketProvider } from "@/context/WebSocketContext";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
+import Loader from "./Loader";
+import type { RootState } from "@/app/store";
 
 function ProtectedRoute() {
-    const currentUser = useSelector((state: any) => state.auth.user);
+    const {user, loading} = useSelector((state: RootState) => state.auth);
+    console.log("user - ", user);
 
-    if (!currentUser) {
+    if(loading) return <Loader />
+
+    if (!user) {
         return <Navigate to="/login" />;
     }
 
     return (
-        <WebSocketProvider user={currentUser}>
+        <WebSocketProvider user={user}>
             <Outlet />
         </WebSocketProvider>
     )
